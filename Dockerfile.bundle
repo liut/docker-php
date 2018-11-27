@@ -1,0 +1,40 @@
+FROM alpine:3.8
+MAINTAINER Eagle Liut <eagle@dantin.me>
+
+RUN apk --update add \
+  bash \
+  nginx \
+  php7-ctype \
+  php7-curl \
+  php7-dom \
+  php7-fpm \
+  php7-gd \
+  php7-iconv \
+  php7-json \
+  php7-pdo_mysql \
+  php7-mysqli \
+  php7-zlib \
+  runit \
+  && rm -rf /var/cache/apk/*
+
+# "s|listen = .*|listen = /var/run/php7-fpm.sock|g"
+RUN sed -i "s|listen = .*|listen = /var/run/php7-fpm.sock|g" /etc/php7/php-fpm.d/www.conf \
+ && sed -i "s|;error_log = .*|error_log = /proc/self/fd/2|g" /etc/php7/php-fpm.conf \
+ && sed -i "s|;listen.owner = .*|listen.owner = nobody|g" /etc/php7/php-fpm.d/www.conf \
+ && sed -i "s|;listen.group = .*|listen.group = nobody|g" /etc/php7/php-fpm.d/www.conf \
+ && sed -i "s|short_open_tag = Off|short_open_tag = On|g" /etc/php7/php.ini
+
+ADD etc/nginx/nginx.conf /etc/nginx/nginx.conf
+ADD etc/nginx/host.default /etc/nginx/conf.d/default.conf
+# ADD etc/php7/console.conf /etc/php7/fpm.d/console.conf
+# ADD etc/php7/console.ini /etc/php7/conf.d/console.ini
+ADD etc/sv /etc/sv
+
+# ADD index.html /var/www/htdocs/
+# ADD start.sh /start.sh
+
+# VOLUME ["/var/www", "/etc/nginx/conf.d", "/etc/nginx/certs"]
+
+EXPOSE 80
+
+CMD ["runsvdir", "/etc/sv"]
